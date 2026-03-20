@@ -3,6 +3,8 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+
+	"video-downloader/internal/downloader"
 )
 
 type DownloadRequest struct {
@@ -11,7 +13,7 @@ type DownloadRequest struct {
 
 type DownloadResponse struct {
 	Message string `json:"message"`
-	URL    string `json:"url"`
+	File    string `json:"file"`
 }
 
 func DownloadHandler(w http.ResponseWriter, r *http.Request) {
@@ -36,12 +38,16 @@ func DownloadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Response 
-	resp := DownloadResponse{
-		Message: "Download started",
-		URL:    req.URL,
+	// Call downloader
+	filePath, err := downloader.DownloadVideo(req.URL)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(resp)
+	// Response 
+	w.Header().Set("Content-Disposition", "attachment; filename=video.mp4")
+	w.Header().Set("Content-Type", "application/octet-stream")
+
+	http.ServeFile(w, r, filePath)
 }
