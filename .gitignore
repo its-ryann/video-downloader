@@ -1,0 +1,14 @@
+# Binaries
+*.exe
+*.out
+*.app
+
+# Go build files
+bin/
+dist/
+
+# OS files
+.DS_Store
+
+# Environment files
+.env
