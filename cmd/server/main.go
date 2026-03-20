@@ -3,12 +3,18 @@ package main
 import (
 	"fmt"
 	"net/http"
+
+	"video-downloader/internal/api"
 )
 
 func main() {
+	// Root route
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, "Server is running>>")
 	})
+
+	// Download endpoint
+	http.HandleFunc("/download", api.DownloadHandler)
 
 	fmt.Println("Starting server on :8080")
 
