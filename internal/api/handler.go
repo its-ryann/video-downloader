@@ -2,7 +2,10 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
+	"os"
 
 	"video-downloader/internal/downloader"
 )
@@ -26,8 +29,7 @@ func DownloadHandler(w http.ResponseWriter, r *http.Request) {
 	var req DownloadRequest
 
 	// Decode the JSON request body
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
@@ -45,9 +47,27 @@ func DownloadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Response 
-	w.Header().Set("Content-Disposition", "attachment; filename=video.mp4")
-	w.Header().Set("Content-Type", "application/octet-stream")
+	defer os.Remove(filePath)
 
-	http.ServeFile(w, r, filePath)
+	file, err := os.Open(filePath)
+    if err != nil {
+        http.Error(w, "failed to open file", http.StatusInternalServerError)
+        return
+	}
+	
+	defer file.Close()
+
+	stat, err := file.Stat()
+    if err != nil {
+        http.Error(w, "failed to stat file", http.StatusInternalServerError)
+        return
+    }
+
+	w.Header().Set("Content-Disposition", `attachment; filename="video.mp4"`)
+    w.Header().Set("Content-Type", "video/mp4")
+    w.Header().Set("Content-Length", fmt.Sprintf("%d", stat.Size()))
+
+	if _, err = io.Copy(w, file); err != nil {
+        fmt.Println("streaming error:", err)
+	}
 }
