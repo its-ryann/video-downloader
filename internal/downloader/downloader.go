@@ -1,48 +1,77 @@
 package downloader
 
 import (
+	"bufio"
 	"fmt"
+	"os"
 	"os/exec"
+	"path/filepath"
+	"strconv"
 	"strings"
+	"time"
 )
 
-func DownloadVideo(url string) (string, error) {
-	cmd := exec.Command(
-		"yt-dlp",
-		"--ignore-config",                // ignore any system/user config files
-		"--no-warnings",                  // suppress non-critical warnings
-		"--merge-output-format", "mp4",   // ensure output is mp4
-		"--print", "after_move:filepath", // print final file path only
-		url,
-	)
+func DownloadVideo(url string, format string, onProgress func(int)) (string, error) {
+	if format == "" {
+		format = "mp4"
+	}
 
-	output, err := cmd.CombinedOutput()
+	outPath := filepath.Join(os.TempDir(), fmt.Sprintf("%d.%s", time.Now().UnixNano(), format))
+
+	args := []string{
+		"--ignore-config",
+		"--no-warnings",
+		"--newline",
+		"-o", outPath,
+	}
+
+	if format == "mp3" {
+		args = append(args, "-x", "--audio-format", "mp3")
+	} else {
+		args = append(args, "--merge-output-format", format)
+	}
+
+	args = append(args, url)
+
+	cmd := exec.Command("yt-dlp", args...)
+
+	// Pipe stdout to read progress line by line
+	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		return "", fmt.Errorf("yt-dlp failed: %v\nOutput: %s", err, string(output))
+		return "", fmt.Errorf("failed to pipe stdout: %v", err)
+	}
+	cmd.Stderr = cmd.Stdout
+
+	if err := cmd.Start(); err != nil {
+		return "", fmt.Errorf("failed to start yt-dlp: %v", err)
 	}
 
-	// Extract last non-empty line — the file path is always last
-	filePath := extractFilePath(string(output))
-
-	if filePath == "" {
-		return "", fmt.Errorf("could not determine downloaded file path.\nRaw output: %s", string(output))
-	}
-
-	return filePath, nil
-}
-
-// extractFilePath gets the last non-empty line from yt-dlp output
-// This is defensive — even if warnings sneak through, the file path is always last
-func extractFilePath(output string) string {
-	lines := strings.Split(output, "\n")
-
-	for i := len(lines) - 1; i >= 0; i-- {
-		line := strings.TrimSpace(lines[i])
-		// File path will start with / (absolute path on Linux)
-		if strings.HasPrefix(line, "/") {
-			return line
+	// Read each line yt-dlp prints and extract the percentage
+	scanner := bufio.NewScanner(stdout)
+	for scanner.Scan() {
+		line := scanner.Text()
+		// yt-dlp progress lines look like: "[download]  45.3% of ..."
+		if strings.Contains(line, "[download]") && strings.Contains(line, "%") {
+			fields := strings.Fields(line)
+			for _, f := range fields {
+				if strings.HasSuffix(f, "%") {
+					pct, err := strconv.ParseFloat(strings.TrimSuffix(f, "%"), 64)
+					if err == nil && onProgress != nil {
+						onProgress(int(pct))
+					}
+					break
+				}
+			}
 		}
 	}
 
-	return ""
+	if err := cmd.Wait(); err != nil {
+		return "", fmt.Errorf("yt-dlp failed: %v", err)
+	}
+
+	if _, err := os.Stat(outPath); err != nil {
+		return "", fmt.Errorf("file not found after download: %v", err)
+	}
+
+	return outPath, nil
 }
