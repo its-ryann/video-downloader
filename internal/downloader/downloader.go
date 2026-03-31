@@ -2,33 +2,47 @@ package downloader
 
 import (
 	"fmt"
-	"os"
 	"os/exec"
-	"path/filepath"
-	"time"
+	"strings"
 )
 
 func DownloadVideo(url string) (string, error) {
-	fileName := fmt.Sprintf("%d.mp4", time.Now().UnixNano())
-	outPath := filepath.Join(os.TempDir(), fileName)
-
 	cmd := exec.Command(
-        "yt-dlp",
-        "-f", "best",
-        "--merge-output-format", "mp4",
-        "-o", outPath,   // ✅ tell yt-dlp exactly where to write
-        url,
-    )
+		"yt-dlp",
+		"--ignore-config",                // ignore any system/user config files
+		"--no-warnings",                  // suppress non-critical warnings
+		"--merge-output-format", "mp4",   // ensure output is mp4
+		"--print", "after_move:filepath", // print final file path only
+		url,
+	)
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return "", fmt.Errorf("failed to download video: %v\nOuput: %s", err, string(output))
+		return "", fmt.Errorf("yt-dlp failed: %v\nOutput: %s", err, string(output))
 	}
 
-	// Find the downloaded file
-	if _, err := os.Stat(outPath); err != nil {
-        return "", fmt.Errorf("download completed but file not found: %v", err)
-    }
+	// Extract last non-empty line — the file path is always last
+	filePath := extractFilePath(string(output))
 
-	return outPath, nil
+	if filePath == "" {
+		return "", fmt.Errorf("could not determine downloaded file path.\nRaw output: %s", string(output))
+	}
+
+	return filePath, nil
+}
+
+// extractFilePath gets the last non-empty line from yt-dlp output
+// This is defensive — even if warnings sneak through, the file path is always last
+func extractFilePath(output string) string {
+	lines := strings.Split(output, "\n")
+
+	for i := len(lines) - 1; i >= 0; i-- {
+		line := strings.TrimSpace(lines[i])
+		// File path will start with / (absolute path on Linux)
+		if strings.HasPrefix(line, "/") {
+			return line
+		}
+	}
+
+	return ""
 }
