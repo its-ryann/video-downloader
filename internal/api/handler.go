@@ -21,8 +21,10 @@ func DownloadHandler(sem chan struct{}) http.HandlerFunc {
 
 		// Step 2: Decode JSON body
 		var req struct {
-			URL string `json:"url"`
+			URL 	string `json:"url"`
+			Format 	string `json:"format"`
 		}
+
 		err := json.NewDecoder(r.Body).Decode(&req)
 		if err != nil {
 			http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -40,7 +42,7 @@ func DownloadHandler(sem chan struct{}) http.HandlerFunc {
 		defer func() { <-sem}() // Release the slot when this function exits — no matter what happens
 		
 		// Step 4: Download the video
-		filePath, err := downloader.DownloadVideo(req.URL)
+		filePath, err := downloader.DownloadVideo(req.URL, req.Format)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -65,7 +67,13 @@ func DownloadHandler(sem chan struct{}) http.HandlerFunc {
 		// Step 7: Set response headers
 		fileName := filepath.Base(filePath)
 		w.Header().Set("Content-Disposition", "attachment; filename=\""+fileName+"\"")
-		w.Header().Set("Content-Type", "video/mp4")
+		contentType := "video/mp4"
+		if req.Format == "mp3" {
+			contentType = "audio/mpeg"
+		} else if req.Format == "webm" {
+			contentType = "video/webm"
+		}
+		w.Header().Set("Content-Type", contentType)
 		w.Header().Set("Content-Length", fmt.Sprintf("%d", fileInfo.Size()))
 
 		// Step 8: Stream file to client
