@@ -1,54 +1,107 @@
 async function startDownload() {
   const url = document.getElementById("urlInput").value.trim();
   const format = document.getElementById("formatSelect").value;
-  const status = document.getElementById("status");
   const btn = document.getElementById("downloadBtn");
+  const btnText = document.getElementById("btnText");
 
-  // Validate input
   if (!url) {
-    status.textContent = "Please enter a video URL.";
-    status.className = "status error";
+    showStatus("error", "Please paste a video URL first.", false);
     return;
   }
 
-  // Show loading state
   btn.disabled = true;
-  btn.textContent = "Downloading...";
-  status.textContent = "Please wait, this may take a minute...";
-  status.className = "status info";
+  btnText.textContent = "Starting...";
+  showStatus("", "Connecting to server...", true);
 
   try {
-    const response = await fetch("/download", {
+    // Step 1: Start the download job
+    const res = await fetch("/download", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ url, format }),
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(errorText);
-    }
+    if (!res.ok) throw new Error(await res.text());
 
-    // Trigger file download in the browser
-    const blob = await response.blob();
-    const downloadUrl = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = downloadUrl;
-    a.download = `video.${format}`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    window.URL.revokeObjectURL(downloadUrl);
+    const { job_id } = await res.json();
 
-    status.textContent = "Download complete!";
-    status.className = "status success";
+    // Step 2: Poll progress every second
+    await pollProgress(job_id, format);
 
   } catch (err) {
-    status.textContent = "Error: " + err.message;
-    status.className = "status error";
-
+    showStatus("error", "Error: " + err.message, false);
   } finally {
     btn.disabled = false;
-    btn.textContent = "Download";
+    btnText.textContent = "Download";
+  }
+}
+
+async function pollProgress(jobId, format) {
+  return new Promise((resolve, reject) => {
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/progress/${jobId}`);
+        const data = await res.json();
+
+        if (data.status === "processing") {
+          const pct = data.progress;
+          showStatus("", `Downloading... ${pct}%`, true, pct);
+          document.getElementById("btnText").textContent = `${pct}%`;
+        }
+
+        if (data.status === "error") {
+          clearInterval(interval);
+          showStatus("error", "Error: " + data.error, false);
+          reject(new Error(data.error));
+        }
+
+        if (data.status === "done") {
+          clearInterval(interval);
+          showStatus("", "Preparing file...", true, 100);
+
+          // Step 3: Fetch the file
+          const fileRes = await fetch(`/file/${jobId}`);
+          if (!fileRes.ok) throw new Error(await fileRes.text());
+
+          const blob = await fileRes.blob();
+          const downloadUrl = window.URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = downloadUrl;
+          a.download = `video.${format}`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(downloadUrl);
+
+          showStatus("success", "Download complete!", false);
+          resolve();
+        }
+
+      } catch (err) {
+        clearInterval(interval);
+        showStatus("error", "Error: " + err.message, false);
+        reject(err);
+      }
+    }, 1000);
+  });
+}
+
+function showStatus(type, message, showSpinner, progress) {
+  const statusBox = document.getElementById("statusBox");
+  const statusText = document.getElementById("statusText");
+  const spinner = document.getElementById("spinner");
+  const progressWrap = document.getElementById("progressBarWrap");
+  const progressBar = document.getElementById("progressBar");
+
+  statusBox.className = "status-box" + (type ? " " + type : "");
+  statusText.textContent = message;
+  spinner.className = "spinner" + (showSpinner ? "" : " hidden");
+
+  if (progress !== undefined) {
+    progressWrap.classList.remove("hidden");
+    progressBar.style.width = progress + "%";
+  } else {
+    progressWrap.classList.add("hidden");
+    progressBar.style.width = "0%";
   }
 }

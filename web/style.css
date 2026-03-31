@@ -280,3 +280,24 @@ button:disabled {
 .footer-links a:hover {
   color: #aaa;
 }
+
+.progress-wrap {
+  margin-top: 0.75rem;
+  background: #1a1a1a;
+  border-radius: 999px;
+  height: 6px;
+  overflow: hidden;
+  border: 1px solid #2a2a2a;
+}
+
+.progress-wrap.hidden {
+  display: none;
+}
+
+.progress-bar {
+  height: 100%;
+  width: 0%;
+  background: #ffffff;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
