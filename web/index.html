@@ -3,31 +3,74 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Video Downloader</title>
+  <title>VidSnap — Free Video Downloader</title>
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
+  <nav class="navbar">
+    <div class="nav-brand">⬇ VidSnap</div>
+    <div class="nav-links">
+      <a href="#">Home</a>
+      <a href="#">How it works</a>
+      <a href="#">FAQ</a>
+    </div>
+  </nav>
+
   <div class="container">
-    <h1>Video Downloader</h1>
-    <p class="subtitle">Paste a YouTube, TikTok or Instagram link below</p>
-
-    <div class="form">
-      <input
-        type="text"
-        id="urlInput"
-        placeholder="https://www.youtube.com/watch?v=..."
-      />
-
-      <select id="formatSelect">
-        <option value="mp4">MP4 (Video)</option>
-        <option value="mp3">MP3 (Audio)</option>
-      </select>
-
-      <button id="downloadBtn" onclick="startDownload()">Download</button>
+    <div class="header">
+      <h1>Download Any Video, Instantly</h1>
+      <p class="subtitle">Paste a link from YouTube, TikTok, Instagram or Twitter and get your file in seconds — free, no sign up, no watermarks.</p>
     </div>
 
-    <p id="status" class="status"></p>
+    <div class="form">
+      <div class="input-group">
+        <label>Video URL</label>
+        <input
+          type="text"
+          id="urlInput"
+          placeholder="Paste your link here..."
+        />
+      </div>
+
+      <div class="input-group">
+        <label>Format</label>
+        <select id="formatSelect">
+          <option value="mp4">MP4 — Video</option>
+          <option value="mp3">MP3 — Audio only</option>
+        </select>
+      </div>
+
+      <button id="downloadBtn" onclick="startDownload()">
+        <span id="btnText">Download</span>
+      </button>
+    </div>
+
+    <div id="statusBox" class="status-box hidden">
+      <div class="spinner" id="spinner"></div>
+      <p id="statusText"></p>
+    </div>
+
+    <div class="supported">
+      <p class="supported-label">Supported platforms</p>
+      <div class="platforms">
+        <span>YouTube</span>
+        <span>TikTok</span>
+        <span>Instagram</span>
+        <span>Twitter</span>
+        <span>Facebook</span>
+        <span>Vimeo</span>
+      </div>
+    </div>
   </div>
+
+  <footer class="footer">
+    <p>© 2025 VidSnap. For personal use only. Respect copyright laws and content creators.</p>
+    <div class="footer-links">
+      <a href="#">Privacy Policy</a>
+      <a href="#">Terms of Use</a>
+      <a href="#">Contact</a>
+    </div>
+  </footer>
 
   <script src="/script.js"></script>
 </body>
