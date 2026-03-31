@@ -11,7 +11,7 @@ async function startDownload() {
 
   btn.disabled = true;
   btnText.textContent = "Starting...";
-  showStatus("", "Connecting to server...", true);
+  document.getElementById("cancelBtn").classList.remove("hidden");
 
   try {
     // Step 1: Start the download job
@@ -33,12 +33,13 @@ async function startDownload() {
   } finally {
     btn.disabled = false;
     btnText.textContent = "Download";
+    document.getElementById("cancelBtn").classList.add("hidden");
   }
 }
 
 async function pollProgress(jobId, format) {
   return new Promise((resolve, reject) => {
-    const interval = setInterval(async () => {
+    activeInterval = setInterval(async () => {
       try {
         const res = await fetch(`/progress/${jobId}`);
         const data = await res.json();
@@ -74,6 +75,7 @@ async function pollProgress(jobId, format) {
           window.URL.revokeObjectURL(downloadUrl);
 
           showStatus("success", "Download complete!", false);
+          document.getElementById("urlInput").value = "";
           resolve();
         }
 
@@ -104,4 +106,15 @@ function showStatus(type, message, showSpinner, progress) {
     progressWrap.classList.add("hidden");
     progressBar.style.width = "0%";
   }
+}
+
+function cancelDownload() {
+  if (activeInterval) {
+    clearInterval(activeInterval);
+    activeInterval = null;
+  }
+  document.getElementById("downloadBtn").disabled = false;
+  document.getElementById("btnText").textContent = "Download";
+  document.getElementById("cancelBtn").classList.add("hidden");
+  showStatus("error", "Download cancelled.", false);
 }

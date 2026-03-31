@@ -301,3 +301,15 @@ button:disabled {
   border-radius: 999px;
   transition: width 0.4s ease;
 }
+
+.cancel-btn {
+  background: transparent;
+  color: #888;
+  border: 1px solid #2a2a2a;
+  margin-top: 0;
+}
+
+.cancel-btn:hover {
+  background: #1a1a1a;
+  color: #fff;
+}
