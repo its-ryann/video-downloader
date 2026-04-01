@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"os"
 	"net/http"
 	"video-downloader/internal/api"
 )
@@ -16,6 +17,10 @@ func Start() {
 	http.HandleFunc("/progress/", api.GetProgress)
 	http.HandleFunc("/file/", api.ServeFile)
 
-	fmt.Println("Server running on :8080")
-	http.ListenAndServe(":8080", nil)
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	fmt.Println("Server running on :" + port)
+	http.ListenAndServe(":"+port, nil)
 }
