@@ -1,3 +1,5 @@
+let activeInterval = null;
+
 async function startDownload() {
   const url = document.getElementById("urlInput").value.trim();
   const format = document.getElementById("formatSelect").value;
@@ -12,22 +14,17 @@ async function startDownload() {
   btn.disabled = true;
   btnText.textContent = "Starting...";
   document.getElementById("cancelBtn").classList.remove("hidden");
+  showStatus("", "Connecting to server...", true);
 
   try {
-    // Step 1: Start the download job
     const res = await fetch("/download", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ url, format }),
     });
-
     if (!res.ok) throw new Error(await res.text());
-
     const { job_id } = await res.json();
-
-    // Step 2: Poll progress every second
     await pollProgress(job_id, format);
-
   } catch (err) {
     showStatus("error", "Error: " + err.message, false);
   } finally {
@@ -51,16 +48,17 @@ async function pollProgress(jobId, format) {
         }
 
         if (data.status === "error") {
-          clearInterval(interval);
+          clearInterval(activeInterval);  // ✅ fixed
+          activeInterval = null;
           showStatus("error", "Error: " + data.error, false);
           reject(new Error(data.error));
         }
 
         if (data.status === "done") {
-          clearInterval(interval);
+          clearInterval(activeInterval);  // ✅ fixed
+          activeInterval = null;
           showStatus("", "Preparing file...", true, 100);
 
-          // Step 3: Fetch the file
           const fileRes = await fetch(`/file/${jobId}`);
           if (!fileRes.ok) throw new Error(await fileRes.text());
 
@@ -80,7 +78,8 @@ async function pollProgress(jobId, format) {
         }
 
       } catch (err) {
-        clearInterval(interval);
+        clearInterval(activeInterval);  // ✅ fixed
+        activeInterval = null;
         showStatus("error", "Error: " + err.message, false);
         reject(err);
       }
