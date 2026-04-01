@@ -139,10 +139,3 @@ This tool is intended for **personal use only**. Always respect copyright laws a
 ## License
 
 MIT
-```
-
----
-
-**GitHub repo description** (paste this in the About section on GitHub):
-```
-A self-hosted video downloader built with Go and yt-dlp. Download MP4/MP3 from YouTube, TikTok, Instagram and more via a clean dark-mode web UI with real-time progress tracking.
