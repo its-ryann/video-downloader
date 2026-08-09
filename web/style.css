@@ -32,31 +32,19 @@ body {
   overflow-x: hidden;
 }
 
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: url('https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=1920&auto=format&fit=crop') center/cover no-repeat;
+  filter: blur(28px) brightness(0.25);
+  transform: scale(1.15);
+  z-index: -1;
+}
+
 /* Background Glow Effects */
 .bg-glow {
-  position: fixed;
-  border-radius: 50%;
-  filter: blur(140px);
-  z-index: -1;
-  pointer-events: none;
-  opacity: 0.5;
-}
-
-.bg-glow-1 {
-  width: 500px;
-  height: 500px;
-  background: radial-gradient(circle, #6366f1 0%, rgba(99, 102, 241, 0) 70%);
-  top: -150px;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.bg-glow-2 {
-  width: 400px;
-  height: 400px;
-  background: radial-gradient(circle, #ec4899 0%, rgba(236, 72, 153, 0) 70%);
-  bottom: -100px;
-  right: -100px;
+  display: none;
 }
 
 /* Navbar */
@@ -66,7 +54,7 @@ body {
   justify-content: space-between;
   align-items: center;
   padding: 1.2rem 3rem;
-  background: rgba(10, 12, 16, 0.6);
+  background: rgba(10, 12, 16, 0.7);
   backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--card-border);
   position: sticky;
@@ -77,19 +65,11 @@ body {
 .nav-brand {
   font-size: 1.35rem;
   font-weight: 800;
-  color: #fff;
+  color: #ffffff;
   letter-spacing: -0.5px;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-}
-
-.brand-icon {
-  background: var(--accent-gradient);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  font-size: 1.4rem;
 }
 
 .nav-links {
@@ -128,9 +108,9 @@ body {
   display: inline-block;
   padding: 0.4rem 1rem;
   border-radius: 999px;
-  background: rgba(99, 102, 241, 0.12);
-  border: 1px solid rgba(99, 102, 241, 0.3);
-  color: #a5b4fc;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #e2e8f0;
   font-size: 0.82rem;
   font-weight: 600;
   margin-bottom: 1rem;
@@ -157,10 +137,10 @@ h1 {
 
 /* Card Wrapper */
 .card {
-  background: var(--card-bg);
-  backdrop-filter: blur(24px);
-  border: 1px solid var(--card-border);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4), 0 0 30px rgba(99, 102, 241, 0.05);
+  background: rgba(15, 19, 28, 0.82);
+  backdrop-filter: blur(28px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
   border-radius: var(--radius-lg);
   padding: 2.2rem;
   width: 100%;
@@ -179,7 +159,6 @@ h1 {
 .input-icon {
   position: absolute;
   left: 1.2rem;
-  font-size: 1.1rem;
   color: var(--text-muted);
   pointer-events: none;
 }
@@ -198,16 +177,16 @@ input[type="text"] {
 
 input[type="text"]:focus {
   outline: none;
-  border-color: var(--input-focus);
-  box-shadow: 0 0 0 4px rgba(129, 140, 248, 0.15);
+  border-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.15);
 }
 
 .fetch-btn {
   position: absolute;
   right: 0.4rem;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.1);
   border: 1px solid var(--input-border);
-  color: #e2e8f0;
+  color: #ffffff;
   padding: 0.6rem 1.1rem;
   border-radius: var(--radius-sm);
   font-size: 0.85rem;
@@ -217,7 +196,7 @@ input[type="text"]:focus {
 }
 
 .fetch-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.2);
   color: #fff;
 }
 
@@ -225,7 +204,7 @@ input[type="text"]:focus {
 .preview-card {
   display: flex;
   gap: 1.2rem;
-  background: rgba(10, 14, 23, 0.6);
+  background: rgba(10, 14, 23, 0.7);
   border: 1px solid var(--input-border);
   border-radius: var(--radius-md);
   padding: 1rem;
@@ -257,7 +236,7 @@ input[type="text"]:focus {
   position: absolute;
   bottom: 6px;
   right: 6px;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.85);
   color: #fff;
   font-size: 0.72rem;
   font-weight: 700;
@@ -290,9 +269,9 @@ input[type="text"]:focus {
   display: inline-block;
   align-self: flex-start;
   margin-top: 0.2rem;
-  background: rgba(168, 85, 247, 0.15);
-  color: #c084fc;
-  border: 1px solid rgba(168, 85, 247, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   padding: 2px 8px;
   border-radius: 99px;
   font-size: 0.72rem;
@@ -334,7 +313,7 @@ select {
 
 select:focus {
   outline: none;
-  border-color: var(--input-focus);
+  border-color: #ffffff;
 }
 
 /* Buttons */
@@ -345,8 +324,8 @@ select:focus {
 }
 
 .primary-btn {
-  background: var(--accent-gradient);
-  color: #ffffff;
+  background: #ffffff;
+  color: #000000;
   border: none;
   padding: 1rem;
   border-radius: var(--radius-md);
@@ -354,14 +333,15 @@ select:focus {
   font-weight: 700;
   font-family: inherit;
   cursor: pointer;
-  box-shadow: 0 8px 25px var(--accent-glow);
-  transition: all 0.25 ease;
+  box-shadow: 0 4px 20px rgba(255, 255, 255, 0.15);
+  transition: all 0.2s ease;
 }
 
 .primary-btn:hover {
+  background: #e2e8f0;
+  color: #000000;
   transform: translateY(-1px);
-  box-shadow: 0 12px 30px var(--accent-glow);
-  opacity: 0.95;
+  box-shadow: 0 6px 25px rgba(255, 255, 255, 0.25);
 }
 
 .primary-btn:active {
@@ -369,12 +349,13 @@ select:focus {
 }
 
 .primary-btn:disabled {
-  background: #1e293b;
-  color: #64748b;
+  background: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.5);
   box-shadow: none;
   cursor: not-allowed;
   transform: none;
 }
+
 
 .cancel-btn {
   background: rgba(239, 68, 68, 0.1);
@@ -425,7 +406,7 @@ select:focus {
 .progress-pct {
   font-size: 0.85rem;
   font-weight: 700;
-  color: #a5b4fc;
+  color: #ffffff;
 }
 
 .status-box.success #statusText { color: #4ade80; }
@@ -434,8 +415,8 @@ select:focus {
 .spinner {
   width: 18px;
   height: 18px;
-  border: 2px solid rgba(255, 255, 255, 0.15);
-  border-top-color: #818cf8;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-top-color: #ffffff;
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
   flex-shrink: 0;
@@ -450,11 +431,11 @@ select:focus {
 }
 
 .progress-wrap {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 999px;
   height: 8px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .progress-wrap.hidden {
@@ -464,7 +445,7 @@ select:focus {
 .progress-bar {
   height: 100%;
   width: 0%;
-  background: var(--accent-gradient);
+  background: #ffffff;
   border-radius: 999px;
   transition: width 0.3s ease;
 }
