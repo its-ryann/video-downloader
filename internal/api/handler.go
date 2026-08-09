@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"mime"
 	"net/http"
 	"os"
@@ -224,20 +223,18 @@ func GetProgress(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// GET /file/{id} — serves completed file
+// GET /file/{id} — serves completed file with range support for video streaming
 func ServeFile(w http.ResponseWriter, r *http.Request) {
 	id := strings.TrimPrefix(r.URL.Path, "/file/")
 	job, ok := getJob(id)
 	if !ok {
-		http.Error(w, "Job not found", http.StatusNotFound)
+		http.Error(w, "Job not found or expired", http.StatusNotFound)
 		return
 	}
 	if job.Status != "done" {
 		http.Error(w, "File not ready", http.StatusAccepted)
 		return
 	}
-
-	defer deleteJob(id)
 
 	file, err := os.Open(job.FilePath)
 	if err != nil {
@@ -274,13 +271,16 @@ func ServeFile(w http.ResponseWriter, r *http.Request) {
 		downloadName = filepath.Base(job.FilePath)
 	}
 
-	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, downloadName))
-	w.Header().Set("Content-Type", contentType)
-	w.Header().Set("Content-Length", fmt.Sprintf("%d", fileInfo.Size()))
-
-	if _, err = io.Copy(w, file); err != nil {
-		fmt.Println("Error streaming file:", err)
+	// Set disposition: attachment for explicit download, inline for video streaming
+	if r.URL.Query().Get("dl") == "1" {
+		w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, downloadName))
+	} else {
+		w.Header().Set("Content-Disposition", fmt.Sprintf(`inline; filename="%s"`, downloadName))
 	}
+	w.Header().Set("Content-Type", contentType)
+
+	// Use http.ServeContent to support HTTP Range requests for video seeking/streaming
+	http.ServeContent(w, r, downloadName, fileInfo.ModTime(), file)
 }
 
 // GET /health — server health check
