@@ -3,79 +3,128 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>VidSnap — Free Video Downloader</title>
+  <title>VidSnap — Free High-Speed Video & Audio Downloader</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="bg-glow bg-glow-2"></div>
+
   <nav class="navbar">
-    <div class="nav-brand">VidSnap</div>
+    <div class="nav-brand">
+      <span class="brand-icon">⚡</span> VidSnap
+    </div>
     <div class="nav-links">
-      <a href="#">Home</a>
-      <a href="#">How it works</a>
-      <a href="#">FAQ</a>
+      <a href="#how-it-works">How it works</a>
+      <a href="#supported">Platforms</a>
+      <a href="#faq">FAQ</a>
     </div>
   </nav>
 
-  <div class="container">
+  <main class="container">
     <div class="header">
+      <div class="badge">🚀 Fast & Free Downloader</div>
       <h1>Download Any Video, Instantly</h1>
-      <p class="subtitle">Paste a link from YouTube, TikTok, Instagram or Twitter and get your file in seconds — free, no sign up, no watermarks.</p>
+      <p class="subtitle">Paste links from YouTube, TikTok, Instagram, Twitter or Vimeo to download high quality MP4 videos or extract MP3 audio in seconds.</p>
     </div>
 
-    <div class="form">
-      <div class="input-group">
-        <label>Video URL</label>
-        <input
-          type="text"
-          id="urlInput"
-          placeholder="Paste your link here..."
-        />
+    <div class="card">
+      <div class="input-container">
+        <div class="input-wrapper">
+          <span class="input-icon">🔗</span>
+          <input
+            type="text"
+            id="urlInput"
+            placeholder="Paste video link here (e.g. YouTube, TikTok, Instagram)..."
+            autocomplete="off"
+          />
+          <button id="fetchBtn" class="fetch-btn" onclick="fetchMetadata()">
+            <span id="fetchBtnText">Preview</span>
+          </button>
+        </div>
       </div>
 
-      <div class="input-group">
-        <label>Format</label>
-        <select id="formatSelect">
-          <option value="mp4">MP4 — Video</option>
-          <option value="mp3">MP3 — Audio only</option>
-        </select>
+      <!-- Preview Card (Hidden by default) -->
+      <div id="previewCard" class="preview-card hidden">
+        <div class="preview-thumb-wrap">
+          <img id="previewThumb" src="" alt="Video thumbnail" />
+          <span id="previewDuration" class="duration-badge">00:00</span>
+        </div>
+        <div class="preview-details">
+          <h3 id="previewTitle" class="preview-title">Video Title</h3>
+          <p id="previewUploader" class="preview-uploader">Uploader Name</p>
+          <span id="previewPlatform" class="platform-tag">YouTube</span>
+        </div>
       </div>
 
-      <button id="downloadBtn" onclick="startDownload()">
-        <span id="btnText">Download</span>
-      </button>
-      <button id="cancelBtn" onclick="cancelDownload()" class="cancel-btn hidden">
-        Cancel
-      </button>
+      <div class="form-row">
+        <div class="input-group">
+          <label for="formatSelect">Format</label>
+          <select id="formatSelect" onchange="toggleQualitySelect()">
+            <option value="mp4">MP4 — Video</option>
+            <option value="mp3">MP3 — Audio Only</option>
+          </select>
+        </div>
 
-    <div id="statusBox" class="status-box hidden">
-      <div class="spinner" id="spinner"></div>
-      <p id="statusText"></p>
-    </div>
-    <div id="progressBarWrap" class="progress-wrap hidden">
-      <div id="progressBar" class="progress-bar"></div>
+        <div class="input-group" id="qualityGroup">
+          <label for="qualitySelect">Quality</label>
+          <select id="qualitySelect">
+            <option value="1080p">1080p (Full HD)</option>
+            <option value="720p" selected>720p (HD)</option>
+            <option value="480p">480p (SD)</option>
+            <option value="360p">360p (Low)</option>
+            <option value="best">Best Available</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="action-buttons">
+        <button id="downloadBtn" class="primary-btn" onclick="startDownload()">
+          <span id="btnText">Download Now</span>
+        </button>
+        <button id="cancelBtn" onclick="cancelDownload()" class="cancel-btn hidden">
+          Cancel Download
+        </button>
+      </div>
+
+      <div id="statusBox" class="status-box hidden">
+        <div class="status-header">
+          <div class="spinner" id="spinner"></div>
+          <span id="statusText">Processing...</span>
+          <span id="progressPct" class="progress-pct">0%</span>
+        </div>
+        <div id="progressBarWrap" class="progress-wrap hidden">
+          <div id="progressBar" class="progress-bar"></div>
+        </div>
+      </div>
     </div>
 
-    <div class="supported">
-      <p class="supported-label">Supported platforms</p>
+    <div class="supported" id="supported">
+      <p class="supported-label">Supported Platforms</p>
       <div class="platforms">
-        <span>YouTube</span>
-        <span>TikTok</span>
-        <span>Instagram</span>
-        <span>Twitter</span>
-        <span>Facebook</span>
+        <span class="platform-chip"><span>▶</span> YouTube</span>
+        <span class="platform-chip"><span>🎵</span> TikTok</span>
+        <span class="platform-chip"><span>📸</span> Instagram</span>
+        <span class="platform-chip"><span>🐦</span> Twitter / X</span>
+        <span class="platform-chip"><span>📘</span> Facebook</span>
+        <span class="platform-chip"><span>🎥</span> Vimeo</span>
       </div>
     </div>
-  </div>
+  </main>
 
   <footer class="footer">
-    <p>© 2025 VidSnap. For personal use only. Respect copyright laws and content creators.</p>
+    <p>© 2026 VidSnap. Fast, clean video downloads for personal use. Respect content creators' rights.</p>
     <div class="footer-links">
       <a href="#">Privacy Policy</a>
-      <a href="#">Terms of Use</a>
-      <a href="#">Contact</a>
+      <a href="#">Terms of Service</a>
+      <a href="#">API & Health</a>
     </div>
   </footer>
 
   <script src="/script.js"></script>
 </body>
 </html>
+
