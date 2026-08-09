@@ -55,14 +55,35 @@
       -webkit-backdrop-filter: blur(24px);
       border: 1px solid rgba(255, 255, 255, 0.15);
     }
-    .recessed-input {
-      background-color: rgba(0, 0, 0, 0.3);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      color: white;
+    .recessed-input,
+    input[type='text'],
+    input[type='url'],
+    select {
+      background-color: rgba(18, 20, 26, 0.85) !important;
+      border: 1px solid rgba(255, 255, 255, 0.15) !important;
+      color: #ffffff !important;
     }
-    .recessed-input:focus {
-      border-color: rgba(255, 255, 255, 0.4);
-      outline: none;
+    .recessed-input:focus,
+    input[type='text']:focus,
+    input[type='url']:focus,
+    select:focus {
+      background-color: rgba(24, 28, 38, 0.95) !important;
+      border-color: rgba(255, 255, 255, 0.4) !important;
+      color: #ffffff !important;
+      outline: none !important;
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.15) !important;
+    }
+    select option {
+      background-color: #1a1b1e !important;
+      color: #ffffff !important;
+    }
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus,
+    input:-webkit-autofill:active {
+      -webkit-text-fill-color: #ffffff !important;
+      -webkit-box-shadow: 0 0 0px 1000px #131314 inset !important;
+      transition: background-color 5000s ease-in-out 0s;
     }
     .primary-btn {
       background-color: #ffffff;
