@@ -210,7 +210,7 @@ async function pollProgress(jobId, format, quality, originalUrl) {
           cleanupPolling();
           showStatus("", "Preparing file download...", true, 100);
 
-          const fileRes = await fetch(`/file/${jobId}`);
+          const fileRes = await fetch(`/file/${jobId}?dl=1`);
           if (!fileRes.ok) throw new Error(await fileRes.text());
 
           const blob = await fileRes.blob();
@@ -338,7 +338,7 @@ function openPlayerModal(id) {
   platformEl.textContent = item.platform;
   formatEl.textContent = item.format;
   qualityEl.textContent = item.quality;
-  downloadLink.href = `/file/${item.id}`;
+  downloadLink.href = `/file/${item.id}?dl=1`;
 
   const fileUrl = `/file/${item.id}`;
 
