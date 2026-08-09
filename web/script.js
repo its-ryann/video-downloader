@@ -18,6 +18,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }, 600);
     });
   }
+  loadSettings();
   renderLibrary();
 });
 
@@ -73,6 +74,9 @@ function switchTab(tabName) {
 
   if (tabName === "library") {
     renderLibrary();
+  }
+  if (tabName === "settings") {
+    updateCacheSizeDisplay();
   }
 }
 
@@ -163,7 +167,7 @@ async function startDownload() {
     if (!res.ok) throw new Error(await res.text());
     const { job_id } = await res.json();
     activeJobId = job_id;
-    await pollProgress(job_id, format, quality);
+    await pollProgress(job_id, format, quality, url);
   } catch (err) {
     showStatus("error", "Error: " + err.message, false);
     btn.disabled = false;
@@ -172,7 +176,7 @@ async function startDownload() {
   }
 }
 
-async function pollProgress(jobId, format, quality) {
+async function pollProgress(jobId, format, quality, originalUrl) {
   return new Promise((resolve, reject) => {
     activeInterval = setInterval(async () => {
       try {
@@ -224,18 +228,21 @@ async function pollProgress(jobId, format, quality) {
 
           showStatus("success", `Download ready: ${downloadFilename}`, false);
           
-          // Save to local library history
-          saveToLibrary({
-            id: jobId,
-            title: (currentVideoInfo && currentVideoInfo.title) || downloadFilename,
-            uploader: (currentVideoInfo && currentVideoInfo.uploader) || "VidSnap Download",
-            thumbnail: (currentVideoInfo && currentVideoInfo.thumbnail) || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop",
-            duration: (currentVideoInfo && currentVideoInfo.duration) ? formatDuration(currentVideoInfo.duration) : "00:00",
-            format: format.toUpperCase(),
-            quality: quality || "HD",
-            platform: (currentVideoInfo && currentVideoInfo.platform) || "Web",
-            date: new Date().toLocaleDateString()
-          });
+          const settings = getSettings();
+          if (settings.autoSave !== false) {
+            saveToLibrary({
+              id: jobId,
+              originalUrl: originalUrl || "",
+              title: (currentVideoInfo && currentVideoInfo.title) || downloadFilename,
+              uploader: (currentVideoInfo && currentVideoInfo.uploader) || "VidSnap Download",
+              thumbnail: (currentVideoInfo && currentVideoInfo.thumbnail) || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop",
+              duration: (currentVideoInfo && currentVideoInfo.duration) ? formatDuration(currentVideoInfo.duration) : "00:00",
+              format: format.toUpperCase(),
+              quality: quality || "HD",
+              platform: (currentVideoInfo && currentVideoInfo.platform) || "Web",
+              date: new Date().toLocaleDateString()
+            });
+          }
 
           document.getElementById("urlInput").value = "";
           hidePreview();
@@ -310,6 +317,130 @@ function showStatus(type, message, showSpinner, progress) {
   }
 }
 
+// MEDIA PLAYER MODAL
+function openPlayerModal(id) {
+  const lib = getLibrary();
+  const item = lib.find(i => i.id === id);
+  if (!item) return;
+
+  const modal = document.getElementById("playerModal");
+  const titleEl = document.getElementById("modalTitle");
+  const platformEl = document.getElementById("modalPlatform");
+  const formatEl = document.getElementById("modalFormat");
+  const qualityEl = document.getElementById("modalQuality");
+  const downloadLink = document.getElementById("modalDownloadLink");
+  const videoPlayer = document.getElementById("modalVideoPlayer");
+  const audioWrap = document.getElementById("modalAudioPlayerWrap");
+  const audioPlayer = document.getElementById("modalAudioPlayer");
+  const audioThumb = document.getElementById("modalAudioThumb");
+
+  titleEl.textContent = item.title;
+  platformEl.textContent = item.platform;
+  formatEl.textContent = item.format;
+  qualityEl.textContent = item.quality;
+  downloadLink.href = `/file/${item.id}`;
+
+  const fileUrl = `/file/${item.id}`;
+
+  if (item.format === "MP3") {
+    videoPlayer.classList.add("hidden");
+    videoPlayer.pause();
+    videoPlayer.src = "";
+
+    audioWrap.classList.remove("hidden");
+    audioThumb.src = item.thumbnail;
+    audioPlayer.src = fileUrl;
+    audioPlayer.play().catch(() => {});
+  } else {
+    audioWrap.classList.add("hidden");
+    audioPlayer.pause();
+    audioPlayer.src = "";
+
+    videoPlayer.classList.remove("hidden");
+    videoPlayer.src = fileUrl;
+    videoPlayer.play().catch(() => {});
+  }
+
+  modal.classList.remove("hidden");
+}
+
+function closePlayerModal() {
+  const modal = document.getElementById("playerModal");
+  const videoPlayer = document.getElementById("modalVideoPlayer");
+  const audioPlayer = document.getElementById("modalAudioPlayer");
+
+  if (videoPlayer) {
+    videoPlayer.pause();
+    videoPlayer.src = "";
+  }
+  if (audioPlayer) {
+    audioPlayer.pause();
+    audioPlayer.src = "";
+  }
+  if (modal) {
+    modal.classList.add("hidden");
+  }
+}
+
+// SETTINGS MANAGEMENT
+function getSettings() {
+  try {
+    return JSON.parse(localStorage.getItem("vidsnap_settings")) || {
+      defaultFormat: "mp4",
+      defaultQuality: "720p",
+      autoSave: true,
+      liveProgress: true
+    };
+  } catch (e) {
+    return { defaultFormat: "mp4", defaultQuality: "720p", autoSave: true, liveProgress: true };
+  }
+}
+
+function loadSettings() {
+  const settings = getSettings();
+  const fmtEl = document.getElementById("settingDefaultFormat");
+  const qualEl = document.getElementById("settingDefaultQuality");
+  const autoSaveEl = document.getElementById("settingAutoSave");
+  const progressEl = document.getElementById("settingLiveProgress");
+
+  if (fmtEl) fmtEl.value = settings.defaultFormat || "mp4";
+  if (qualEl) qualEl.value = settings.defaultQuality || "720p";
+  if (autoSaveEl) autoSaveEl.checked = settings.autoSave !== false;
+  if (progressEl) progressEl.checked = settings.liveProgress !== false;
+
+  const homeFormat = document.getElementById("formatSelect");
+  const homeQuality = document.getElementById("qualitySelect");
+  if (homeFormat) homeFormat.value = settings.defaultFormat || "mp4";
+  if (homeQuality) homeQuality.value = settings.defaultQuality || "720p";
+  toggleQualitySelect();
+
+  updateCacheSizeDisplay();
+}
+
+function saveSettings() {
+  const settings = {
+    defaultFormat: document.getElementById("settingDefaultFormat").value,
+    defaultQuality: document.getElementById("settingDefaultQuality").value,
+    autoSave: document.getElementById("settingAutoSave").checked,
+    liveProgress: document.getElementById("settingLiveProgress").checked
+  };
+
+  localStorage.setItem("vidsnap_settings", JSON.stringify(settings));
+
+  const homeFormat = document.getElementById("formatSelect");
+  const homeQuality = document.getElementById("qualitySelect");
+  if (homeFormat) homeFormat.value = settings.defaultFormat;
+  if (homeQuality) homeQuality.value = settings.defaultQuality;
+  toggleQualitySelect();
+}
+
+function updateCacheSizeDisplay() {
+  const cacheEl = document.getElementById("cacheSizeText");
+  if (!cacheEl) return;
+  const items = getLibrary();
+  cacheEl.textContent = `Items Saved: ${items.length}`;
+}
+
 // LIBRARY HISTORY PERSISTENCE
 function getLibrary() {
   try {
@@ -323,11 +454,13 @@ function saveToLibrary(item) {
   const lib = getLibrary();
   lib.unshift(item);
   localStorage.setItem("vidsnap_library", JSON.stringify(lib.slice(0, 30)));
+  updateCacheSizeDisplay();
 }
 
 function clearLibraryHistory() {
   localStorage.removeItem("vidsnap_library");
   renderLibrary();
+  updateCacheSizeDisplay();
 }
 
 function filterLibrary() {
@@ -353,10 +486,15 @@ function renderLibrary(filterQuery = "") {
 
   libraryEmpty.classList.add("hidden");
   libraryGrid.innerHTML = items.map(item => `
-    <div class="glass-panel rounded-2xl overflow-hidden flex flex-col group cursor-pointer hover:border-white/30 transition-all">
+    <div onclick="openPlayerModal('${item.id}')" class="glass-panel rounded-2xl overflow-hidden flex flex-col group cursor-pointer hover:border-white/40 hover:scale-[1.02] transition-all">
       <div class="relative aspect-video overflow-hidden bg-black/40">
         <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src="${item.thumbnail}" alt="${item.title}"/>
         <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-80"></div>
+        <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
+          <div class="w-12 h-12 rounded-full bg-white text-black flex items-center justify-center shadow-lg">
+            <span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+          </div>
+        </div>
         <div class="absolute bottom-2.5 right-2.5 bg-black/80 backdrop-blur-md text-white font-mono text-[11px] px-2 py-0.5 rounded border border-white/10">
           ${item.duration}
         </div>
@@ -377,5 +515,6 @@ function renderLibrary(filterQuery = "") {
     </div>
   `).join("");
 }
+
 
 
