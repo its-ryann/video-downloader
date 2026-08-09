@@ -1,126 +1,371 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="dark" lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>VidSnap — Free High-Speed Video & Audio Downloader</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/style.css" />
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>VidSnap — Main Downloader</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700;800&family=Geist:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "surface": "#131314",
+            "surface-container": "#201f20",
+            "surface-container-low": "#1c1b1c",
+            "surface-container-high": "#2a2a2b",
+            "surface-container-highest": "#353436",
+            "primary": "#ffffff",
+            "on-surface": "#e5e2e3",
+            "on-surface-variant": "#c4c7c8",
+            "error": "#ffb4ab",
+          },
+          fontFamily: {
+            "sans": ["Hanken Grotesk", "sans-serif"],
+            "headline": ["Hanken Grotesk", "sans-serif"],
+            "label": ["Geist", "sans-serif"],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #131314;
+      color: #e5e2e3;
+      font-family: 'Hanken Grotesk', sans-serif;
+    }
+    .bg-custom-overlay {
+      background: linear-gradient(to bottom, rgba(19, 19, 20, 0.85) 0%, rgba(19, 19, 20, 0.98) 100%);
+    }
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .glass-popover {
+      background: rgba(20, 20, 20, 0.85);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+    .recessed-input {
+      background-color: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: white;
+    }
+    .recessed-input:focus {
+      border-color: rgba(255, 255, 255, 0.4);
+      outline: none;
+    }
+    .primary-btn {
+      background-color: #ffffff;
+      color: #000000;
+      transition: all 0.2s ease;
+    }
+    .primary-btn:hover {
+      transform: scale(1.015);
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.25);
+    }
+    .nav-link {
+      transition: color 0.2s;
+      cursor: pointer;
+    }
+    .nav-link:hover, .nav-link.active {
+      color: white;
+    }
+  </style>
 </head>
-<body>
-  <nav class="navbar">
-    <div class="nav-brand">VidSnap</div>
-    <div class="nav-links">
-      <a href="#how-it-works">How it works</a>
-      <a href="#supported">Platforms</a>
-      <a href="#faq">FAQ</a>
+<body class="min-h-screen flex flex-col relative overflow-x-hidden antialiased">
+
+  <!-- Background Image with Overlay -->
+  <div class="fixed inset-0 z-0 pointer-events-none">
+    <img alt="Cinematic blurred city street at night" class="w-full h-full object-cover opacity-35" src="https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=1920&auto=format&fit=crop"/>
+    <div class="absolute inset-0 bg-custom-overlay"></div>
+  </div>
+
+  <!-- Top Navigation Bar (Desktop) -->
+  <header class="relative z-40 hidden md:flex justify-between items-center w-full px-6 py-4 max-w-6xl mx-auto bg-surface/80 backdrop-blur-xl border-b border-white/10 sticky top-0">
+    <div class="flex items-center gap-2.5 text-primary cursor-pointer" onclick="switchTab('home')">
+      <span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">movie_edit</span>
+      <span class="text-2xl font-bold tracking-tight">VidSnap</span>
     </div>
-  </nav>
+    <nav class="flex gap-8">
+      <a id="navHome" class="text-white font-medium nav-link active flex items-center gap-1.5" onclick="switchTab('home')">
+        <span class="material-symbols-outlined text-lg">download</span> Home
+      </a>
+      <a id="navLibrary" class="text-on-surface-variant font-medium nav-link flex items-center gap-1.5" onclick="switchTab('library')">
+        <span class="material-symbols-outlined text-lg">video_library</span> Library
+      </a>
+      <a id="navSettings" class="text-on-surface-variant font-medium nav-link flex items-center gap-1.5" onclick="switchTab('settings')">
+        <span class="material-symbols-outlined text-lg">settings</span> Settings
+      </a>
+    </nav>
+    <button onclick="switchTab('settings')" class="px-5 py-1.5 rounded-full border border-white/20 text-white hover:bg-white/10 transition-all text-xs font-semibold uppercase tracking-wider">
+      Pro Active
+    </button>
+  </header>
 
-  <main class="container">
-    <div class="header">
-      <div class="badge">Fast & Free Downloader</div>
-      <h1>Download Any Video, Instantly</h1>
-      <p class="subtitle">Paste links from YouTube, TikTok, Instagram, Twitter or Vimeo to download high quality MP4 videos or extract MP3 audio in seconds.</p>
+  <!-- Top App Bar (Mobile) -->
+  <header class="relative z-40 flex md:hidden justify-between items-center w-full px-5 py-3.5 bg-surface/80 backdrop-blur-xl border-b border-white/10 sticky top-0">
+    <div class="flex items-center gap-2 text-primary" onclick="switchTab('home')">
+      <span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">movie_edit</span>
+      <span class="text-xl tracking-tight font-bold">VidSnap</span>
+    </div>
+    <button onclick="switchTab('settings')" class="text-on-surface-variant">
+      <span class="material-symbols-outlined">settings</span>
+    </button>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="relative z-10 flex-grow flex flex-col items-center w-full max-w-5xl mx-auto px-4 py-8 md:py-12 mb-20 md:mb-8">
+    
+    <!-- ================= VIEW 1: HOME DOWNLOADER ================= -->
+    <div id="viewHome" class="w-full flex flex-col items-center">
+      <!-- Hero Header -->
+      <div class="text-center mb-8 max-w-2xl mx-auto">
+        <div class="inline-flex items-center gap-2 px-4 py-1 rounded-full border border-white/10 bg-white/5 mb-4">
+          <span class="text-xs text-on-surface-variant font-medium uppercase tracking-wider">Fast & Free Downloader</span>
+        </div>
+        <h1 class="text-3xl md:text-5xl font-extrabold text-primary mb-3 tracking-tight">Download Any Video, Instantly</h1>
+        <p class="text-on-surface-variant text-base max-w-lg mx-auto">Paste links from YouTube, TikTok, Instagram, Twitter or Vimeo to download high quality MP4 videos or extract MP3 audio in seconds.</p>
+      </div>
+
+      <!-- Downloader Panel -->
+      <div class="w-full max-w-2xl glass-panel rounded-2xl p-6 md:p-8 mb-8 shadow-2xl relative overflow-hidden">
+        <div class="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+        
+        <div class="flex flex-col gap-5">
+          <!-- Input Field -->
+          <div class="relative flex items-center">
+            <span class="material-symbols-outlined absolute left-4 text-on-surface-variant pointer-events-none">link</span>
+            <input
+              id="urlInput"
+              class="w-full recessed-input rounded-xl py-3.5 pl-12 pr-28 text-base focus:ring-0 placeholder:text-on-surface-variant/50"
+              placeholder="Paste video link here (e.g. YouTube, TikTok)..."
+              type="url"
+              autocomplete="off"
+            />
+            <button
+              id="fetchBtn"
+              onclick="fetchMetadata()"
+              type="button"
+              class="absolute right-2 px-4 py-1.5 rounded-lg bg-white/10 text-white text-xs font-semibold hover:bg-white/20 transition-all"
+            >
+              <span id="fetchBtnText">Preview</span>
+            </button>
+          </div>
+
+          <!-- Video Preview Card (Dynamic) -->
+          <div id="previewCard" class="hidden flex flex-col md:flex-row gap-4 p-4 rounded-xl bg-black/40 border border-white/10 items-center">
+            <div class="relative w-full md:w-44 aspect-video rounded-lg overflow-hidden flex-shrink-0 bg-surface-container">
+              <img id="previewThumb" src="" alt="Thumbnail" class="w-full h-full object-cover"/>
+              <span id="previewDuration" class="absolute bottom-2 right-2 bg-black/80 text-white text-[11px] font-mono px-2 py-0.5 rounded">00:00</span>
+            </div>
+            <div class="flex flex-col gap-1 w-full overflow-hidden">
+              <h3 id="previewTitle" class="text-white font-bold text-base truncate">Video Preview</h3>
+              <p id="previewUploader" class="text-on-surface-variant text-xs">Uploader Name</p>
+              <span id="previewPlatform" class="inline-block px-2.5 py-0.5 rounded-full bg-white/10 text-white text-[11px] font-semibold self-start border border-white/10 mt-1">YouTube</span>
+            </div>
+          </div>
+
+          <!-- Options Row -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Format</label>
+              <select id="formatSelect" onchange="toggleQualitySelect()" class="w-full recessed-input rounded-xl py-3 px-4 appearance-none cursor-pointer text-sm focus:ring-0">
+                <option value="mp4">MP4 — Video</option>
+                <option value="mp3">MP3 — Audio Only</option>
+              </select>
+            </div>
+
+            <div class="flex flex-col gap-1.5" id="qualityGroup">
+              <label class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Quality</label>
+              <select id="qualitySelect" class="w-full recessed-input rounded-xl py-3 px-4 appearance-none cursor-pointer text-sm focus:ring-0">
+                <option value="1080p">1080p (Full HD)</option>
+                <option value="720p" selected>720p (HD)</option>
+                <option value="480p">480p (SD)</option>
+                <option value="360p">360p (Low)</option>
+                <option value="best">Best Available</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flex flex-col gap-3 mt-2">
+            <button id="downloadBtn" onclick="startDownload()" class="w-full primary-btn rounded-xl py-3.5 text-base font-bold flex items-center justify-center gap-2">
+              <span class="material-symbols-outlined text-xl">download</span>
+              <span id="btnText">Download Now</span>
+            </button>
+            <button id="cancelBtn" onclick="cancelDownload()" class="hidden w-full rounded-xl py-3 border border-error/40 text-error hover:bg-error/10 transition-colors text-sm font-semibold">
+              Cancel Download
+            </button>
+          </div>
+
+          <!-- Status & Progress Box -->
+          <div id="statusBox" class="hidden flex flex-col gap-3 p-4 rounded-xl bg-black/40 border border-white/10">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2.5">
+                <div id="spinner" class="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                <span id="statusText" class="text-sm font-medium text-white">Initializing download...</span>
+              </div>
+              <span id="progressPct" class="text-xs font-bold text-white">0%</span>
+            </div>
+            <div id="progressBarWrap" class="w-full bg-white/10 rounded-full h-2 overflow-hidden border border-white/10">
+              <div id="progressBar" class="bg-white h-full w-0 transition-all duration-300"></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Supported Platforms -->
+      <div class="flex flex-col items-center gap-3">
+        <span class="text-xs text-on-surface-variant font-semibold uppercase tracking-wider">Supported Platforms</span>
+        <div class="flex flex-wrap justify-center gap-2.5">
+          <span class="px-4 py-1.5 rounded-full bg-surface-container border border-white/5 text-xs text-on-surface font-medium">YouTube</span>
+          <span class="px-4 py-1.5 rounded-full bg-surface-container border border-white/5 text-xs text-on-surface font-medium">TikTok</span>
+          <span class="px-4 py-1.5 rounded-full bg-surface-container border border-white/5 text-xs text-on-surface font-medium">Instagram</span>
+          <span class="px-4 py-1.5 rounded-full bg-surface-container border border-white/5 text-xs text-on-surface font-medium">Twitter / X</span>
+          <span class="px-4 py-1.5 rounded-full bg-surface-container border border-white/5 text-xs text-on-surface font-medium">Facebook</span>
+          <span class="px-4 py-1.5 rounded-full bg-surface-container border border-white/5 text-xs text-on-surface font-medium">Vimeo</span>
+        </div>
+      </div>
     </div>
 
-    <div class="card">
-      <div class="input-container">
-        <div class="input-wrapper">
-          <svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-          <input
-            type="text"
-            id="urlInput"
-            placeholder="Paste video link here (e.g. YouTube, TikTok, Instagram)..."
-            autocomplete="off"
-          />
-          <button id="fetchBtn" class="fetch-btn" onclick="fetchMetadata()">
-            <span id="fetchBtnText">Preview</span>
-          </button>
+    <!-- ================= VIEW 2: LIBRARY / COLLECTION ================= -->
+    <div id="viewLibrary" class="hidden w-full max-w-4xl flex flex-col gap-6">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 class="text-3xl font-extrabold text-primary tracking-tight">My Collection</h1>
+          <p class="text-on-surface-variant text-sm mt-1">Your downloaded media library history.</p>
+        </div>
+        <div class="relative w-full md:w-80">
+          <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-lg">search</span>
+          <input id="librarySearch" oninput="filterLibrary()" class="recessed-input w-full pl-10 pr-4 py-2.5 rounded-xl text-sm placeholder:text-on-surface-variant/50" placeholder="Search library..." type="text"/>
         </div>
       </div>
 
-      <!-- Preview Card (Hidden by default) -->
-      <div id="previewCard" class="preview-card hidden">
-        <div class="preview-thumb-wrap">
-          <img id="previewThumb" src="" alt="Video thumbnail" />
-          <span id="previewDuration" class="duration-badge">00:00</span>
-        </div>
-        <div class="preview-details">
-          <h3 id="previewTitle" class="preview-title">Video Title</h3>
-          <p id="previewUploader" class="preview-uploader">Uploader Name</p>
-          <span id="previewPlatform" class="platform-tag">YouTube</span>
-        </div>
+      <!-- Library Grid -->
+      <div id="libraryGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <!-- Rendered dynamically by script.js -->
+      </div>
+      <div id="libraryEmpty" class="hidden flex flex-col items-center justify-center p-12 text-center glass-panel rounded-2xl">
+        <span class="material-symbols-outlined text-4xl text-on-surface-variant mb-2">video_library</span>
+        <p class="text-white font-bold text-lg">No downloads in your collection yet</p>
+        <p class="text-on-surface-variant text-sm mt-1 mb-4">Paste a video link on the home tab to start downloading media.</p>
+        <button onclick="switchTab('home')" class="primary-btn px-5 py-2 rounded-xl text-sm font-bold">Go to Downloader</button>
+      </div>
+    </div>
+
+    <!-- ================= VIEW 3: SETTINGS ================= -->
+    <div id="viewSettings" class="hidden w-full max-w-3xl flex flex-col gap-6">
+      <div>
+        <h1 class="text-3xl font-extrabold text-primary tracking-tight">Settings</h1>
+        <p class="text-on-surface-variant text-sm mt-1">Manage application preferences and environment.</p>
       </div>
 
-      <div class="form-row">
-        <div class="input-group">
-          <label for="formatSelect">Format</label>
-          <select id="formatSelect" onchange="toggleQualitySelect()">
-            <option value="mp4">MP4 — Video</option>
-            <option value="mp3">MP3 — Audio Only</option>
-          </select>
+      <!-- Pro Banner -->
+      <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-surface-container-highest to-surface-container border border-white/10 p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div class="flex flex-col gap-1">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">workspace_premium</span>
+            <h2 class="text-xl font-bold text-primary">VidSnap Active Engine</h2>
+          </div>
+          <p class="text-on-surface-variant text-xs max-w-md">Multi-resolution extraction, live yt-dlp backend processing, and instant stream delivery active.</p>
         </div>
-
-        <div class="input-group" id="qualityGroup">
-          <label for="qualitySelect">Quality</label>
-          <select id="qualitySelect">
-            <option value="1080p">1080p (Full HD)</option>
-            <option value="720p" selected>720p (HD)</option>
-            <option value="480p">480p (SD)</option>
-            <option value="360p">360p (Low)</option>
-            <option value="best">Best Available</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="action-buttons">
-        <button id="downloadBtn" class="primary-btn" onclick="startDownload()">
-          <span id="btnText">Download Now</span>
+        <button class="bg-primary text-black px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider hover:scale-105 transition-all">
+          Active Status
         </button>
-        <button id="cancelBtn" onclick="cancelDownload()" class="cancel-btn hidden">
-          Cancel Download
-        </button>
       </div>
 
-      <div id="statusBox" class="status-box hidden">
-        <div class="status-header">
-          <div class="spinner" id="spinner"></div>
-          <span id="statusText">Processing...</span>
-          <span id="progressPct" class="progress-pct">0%</span>
+      <!-- Settings Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div class="glass-panel rounded-2xl p-6 flex flex-col gap-5">
+          <div class="flex items-center gap-2.5 border-b border-white/10 pb-3">
+            <span class="material-symbols-outlined text-on-surface-variant">download</span>
+            <h3 class="text-lg font-bold text-primary">Download Rules</h3>
+          </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs text-on-surface-variant font-medium">Default Save Path</label>
+            <div class="flex items-center gap-2 bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-white">
+              <span class="material-symbols-outlined text-sm text-on-surface-variant">folder</span>
+              <span class="truncate flex-1">Browser Downloads (/Downloads)</span>
+            </div>
+          </div>
+          <div class="flex items-center justify-between pt-2">
+            <div class="flex flex-col">
+              <span class="text-sm font-medium text-primary">Auto-Save History</span>
+              <span class="text-xs text-on-surface-variant">Store downloaded clips in Library tab.</span>
+            </div>
+            <input type="checkbox" checked class="w-5 h-5 rounded accent-white cursor-pointer"/>
+          </div>
         </div>
-        <div id="progressBarWrap" class="progress-wrap hidden">
-          <div id="progressBar" class="progress-bar"></div>
+
+        <div class="glass-panel rounded-2xl p-6 flex flex-col gap-5">
+          <div class="flex items-center gap-2.5 border-b border-white/10 pb-3">
+            <span class="material-symbols-outlined text-on-surface-variant">tune</span>
+            <h3 class="text-lg font-bold text-primary">App Behavior</h3>
+          </div>
+          <div class="flex items-center justify-between">
+            <div class="flex flex-col">
+              <span class="text-sm font-medium text-primary">Live Progress Polling</span>
+              <span class="text-xs text-on-surface-variant">Real-time status updates every 800ms.</span>
+            </div>
+            <input type="checkbox" checked class="w-5 h-5 rounded accent-white cursor-pointer"/>
+          </div>
+          <div class="flex items-center justify-between pt-2">
+            <div class="flex flex-col">
+              <span class="text-sm font-medium text-primary">Auto Memory TTL</span>
+              <span class="text-xs text-on-surface-variant">Purge temp files after 15 minutes.</span>
+            </div>
+            <input type="checkbox" checked class="w-5 h-5 rounded accent-white cursor-pointer"/>
+          </div>
+          <div class="mt-auto pt-3 border-t border-white/10 flex justify-between items-center text-xs">
+            <span class="text-on-surface-variant">Library History</span>
+            <button onclick="clearLibraryHistory()" class="text-white hover:underline font-semibold">Clear History</button>
+          </div>
         </div>
       </div>
     </div>
 
-    <div class="supported" id="supported">
-      <p class="supported-label">Supported Platforms</p>
-      <div class="platforms">
-        <span class="platform-chip">YouTube</span>
-        <span class="platform-chip">TikTok</span>
-        <span class="platform-chip">Instagram</span>
-        <span class="platform-chip">Twitter / X</span>
-        <span class="platform-chip">Facebook</span>
-        <span class="platform-chip">Vimeo</span>
-      </div>
-    </div>
   </main>
 
-  <footer class="footer">
-    <p>© 2026 VidSnap. Fast, clean video downloads for personal use. Respect content creators' rights.</p>
-    <div class="footer-links">
-      <a href="#">Privacy Policy</a>
-      <a href="#">Terms of Service</a>
-      <a href="#">API & Health</a>
+  <!-- Bottom Navigation Bar (Mobile Only) -->
+  <nav class="md:hidden fixed bottom-0 w-full z-50 bg-surface/90 backdrop-blur-2xl border-t border-white/10 flex justify-around items-center px-4 h-16">
+    <a id="mobileNavHome" onclick="switchTab('home')" class="flex flex-col items-center justify-center text-white cursor-pointer">
+      <span class="material-symbols-outlined text-xl">download</span>
+      <span class="text-[11px] font-medium mt-0.5">Home</span>
+    </a>
+    <a id="mobileNavLibrary" onclick="switchTab('library')" class="flex flex-col items-center justify-center text-on-surface-variant/70 cursor-pointer">
+      <span class="material-symbols-outlined text-xl">video_library</span>
+      <span class="text-[11px] font-medium mt-0.5">Library</span>
+    </a>
+    <a id="mobileNavSettings" onclick="switchTab('settings')" class="flex flex-col items-center justify-center text-on-surface-variant/70 cursor-pointer">
+      <span class="material-symbols-outlined text-xl">settings</span>
+      <span class="text-[11px] font-medium mt-0.5">Settings</span>
+    </a>
+  </nav>
+
+  <!-- Footer (Desktop) -->
+  <footer class="hidden md:flex max-w-6xl mx-auto justify-between items-center px-6 py-6 border-t border-white/10 w-full z-10 text-xs text-on-surface-variant">
+    <p>© 2026 VidSnap. Fast, clean video downloads for personal use.</p>
+    <div class="flex gap-6">
+      <a href="#" class="hover:text-primary transition-colors">Privacy Policy</a>
+      <a href="#" class="hover:text-primary transition-colors">Terms of Service</a>
+      <a href="/health" target="_blank" class="hover:text-primary transition-colors">API Health</a>
     </div>
   </footer>
 
   <script src="/script.js"></script>
 </body>
 </html>
+
 
 
