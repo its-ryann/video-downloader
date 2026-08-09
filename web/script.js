@@ -5,18 +5,76 @@ let debounceTimeout = null;
 
 document.addEventListener("DOMContentLoaded", () => {
   const urlInput = document.getElementById("urlInput");
-  urlInput.addEventListener("input", () => {
-    clearTimeout(debounceTimeout);
-    debounceTimeout = setTimeout(() => {
-      const url = urlInput.value.trim();
-      if (url.startsWith("http://") || url.startsWith("https://")) {
-        fetchMetadata();
-      } else {
-        hidePreview();
-      }
-    }, 600);
-  });
+  if (urlInput) {
+    urlInput.addEventListener("input", () => {
+      clearTimeout(debounceTimeout);
+      debounceTimeout = setTimeout(() => {
+        const url = urlInput.value.trim();
+        if (url.startsWith("http://") || url.startsWith("https://")) {
+          fetchMetadata();
+        } else {
+          hidePreview();
+        }
+      }, 600);
+    });
+  }
+  renderLibrary();
 });
+
+// View Navigation Logic
+function switchTab(tabName) {
+  const views = {
+    home: document.getElementById("viewHome"),
+    library: document.getElementById("viewLibrary"),
+    settings: document.getElementById("viewSettings")
+  };
+
+  const navs = {
+    home: document.getElementById("navHome"),
+    library: document.getElementById("navLibrary"),
+    settings: document.getElementById("navSettings")
+  };
+
+  const mobileNavs = {
+    home: document.getElementById("mobileNavHome"),
+    library: document.getElementById("mobileNavLibrary"),
+    settings: document.getElementById("mobileNavSettings")
+  };
+
+  Object.keys(views).forEach(key => {
+    if (views[key]) {
+      if (key === tabName) {
+        views[key].classList.remove("hidden");
+      } else {
+        views[key].classList.add("hidden");
+      }
+    }
+
+    if (navs[key]) {
+      if (key === tabName) {
+        navs[key].classList.add("text-white", "active");
+        navs[key].classList.remove("text-on-surface-variant");
+      } else {
+        navs[key].classList.remove("text-white", "active");
+        navs[key].classList.add("text-on-surface-variant");
+      }
+    }
+
+    if (mobileNavs[key]) {
+      if (key === tabName) {
+        mobileNavs[key].classList.add("text-white");
+        mobileNavs[key].classList.remove("text-on-surface-variant/70");
+      } else {
+        mobileNavs[key].classList.remove("text-white");
+        mobileNavs[key].classList.add("text-on-surface-variant/70");
+      }
+    }
+  });
+
+  if (tabName === "library") {
+    renderLibrary();
+  }
+}
 
 function formatDuration(seconds) {
   if (!seconds || isNaN(seconds)) return "Live";
@@ -105,7 +163,7 @@ async function startDownload() {
     if (!res.ok) throw new Error(await res.text());
     const { job_id } = await res.json();
     activeJobId = job_id;
-    await pollProgress(job_id, format);
+    await pollProgress(job_id, format, quality);
   } catch (err) {
     showStatus("error", "Error: " + err.message, false);
     btn.disabled = false;
@@ -114,7 +172,7 @@ async function startDownload() {
   }
 }
 
-async function pollProgress(jobId, format) {
+async function pollProgress(jobId, format, quality) {
   return new Promise((resolve, reject) => {
     activeInterval = setInterval(async () => {
       try {
@@ -165,6 +223,20 @@ async function pollProgress(jobId, format) {
           window.URL.revokeObjectURL(downloadUrl);
 
           showStatus("success", `Download ready: ${downloadFilename}`, false);
+          
+          // Save to local library history
+          saveToLibrary({
+            id: jobId,
+            title: (currentVideoInfo && currentVideoInfo.title) || downloadFilename,
+            uploader: (currentVideoInfo && currentVideoInfo.uploader) || "VidSnap Download",
+            thumbnail: (currentVideoInfo && currentVideoInfo.thumbnail) || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop",
+            duration: (currentVideoInfo && currentVideoInfo.duration) ? formatDuration(currentVideoInfo.duration) : "00:00",
+            format: format.toUpperCase(),
+            quality: quality || "HD",
+            platform: (currentVideoInfo && currentVideoInfo.platform) || "Web",
+            date: new Date().toLocaleDateString()
+          });
+
           document.getElementById("urlInput").value = "";
           hidePreview();
           resetButtons();
@@ -216,19 +288,94 @@ function showStatus(type, message, showSpinner, progress) {
   const progressBar = document.getElementById("progressBar");
   const progressPct = document.getElementById("progressPct");
 
-  statusBox.className = "status-box" + (type ? " " + type : "");
+  statusBox.className = "flex flex-col gap-3 p-4 rounded-xl bg-black/40 border " + (type === "error" ? "border-error/40" : "border-white/10");
   statusText.textContent = message;
-  spinner.className = "spinner" + (showSpinner ? "" : " hidden");
+  spinner.className = "w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" + (showSpinner ? "" : " hidden");
 
   if (progress !== undefined && progress >= 0) {
+    statusBox.classList.remove("hidden");
     progressWrap.classList.remove("hidden");
     progressBar.style.width = progress + "%";
     progressPct.textContent = progress + "%";
     progressPct.style.display = "inline";
   } else {
+    if (!message) {
+      statusBox.classList.add("hidden");
+    } else {
+      statusBox.classList.remove("hidden");
+    }
     progressWrap.classList.add("hidden");
     progressBar.style.width = "0%";
     progressPct.style.display = "none";
   }
 }
+
+// LIBRARY HISTORY PERSISTENCE
+function getLibrary() {
+  try {
+    return JSON.parse(localStorage.getItem("vidsnap_library")) || [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveToLibrary(item) {
+  const lib = getLibrary();
+  lib.unshift(item);
+  localStorage.setItem("vidsnap_library", JSON.stringify(lib.slice(0, 30)));
+}
+
+function clearLibraryHistory() {
+  localStorage.removeItem("vidsnap_library");
+  renderLibrary();
+}
+
+function filterLibrary() {
+  const query = document.getElementById("librarySearch").value.toLowerCase().trim();
+  renderLibrary(query);
+}
+
+function renderLibrary(filterQuery = "") {
+  const libraryGrid = document.getElementById("libraryGrid");
+  const libraryEmpty = document.getElementById("libraryEmpty");
+  if (!libraryGrid) return;
+
+  const items = getLibrary().filter(item => {
+    if (!filterQuery) return true;
+    return item.title.toLowerCase().includes(filterQuery) || item.platform.toLowerCase().includes(filterQuery);
+  });
+
+  if (items.length === 0) {
+    libraryGrid.innerHTML = "";
+    libraryEmpty.classList.remove("hidden");
+    return;
+  }
+
+  libraryEmpty.classList.add("hidden");
+  libraryGrid.innerHTML = items.map(item => `
+    <div class="glass-panel rounded-2xl overflow-hidden flex flex-col group cursor-pointer hover:border-white/30 transition-all">
+      <div class="relative aspect-video overflow-hidden bg-black/40">
+        <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src="${item.thumbnail}" alt="${item.title}"/>
+        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-80"></div>
+        <div class="absolute bottom-2.5 right-2.5 bg-black/80 backdrop-blur-md text-white font-mono text-[11px] px-2 py-0.5 rounded border border-white/10">
+          ${item.duration}
+        </div>
+        <div class="absolute top-2.5 left-2.5 bg-white/10 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded-full border border-white/20">
+          ${item.platform}
+        </div>
+      </div>
+      <div class="p-4 flex flex-col gap-2">
+        <h3 class="font-bold text-white text-base truncate">${item.title}</h3>
+        <div class="flex items-center justify-between text-xs text-on-surface-variant mt-1">
+          <div class="flex gap-1.5">
+            <span class="px-2 py-0.5 rounded bg-white/10 text-white text-[10px] font-semibold">${item.format}</span>
+            <span class="px-2 py-0.5 rounded bg-white/10 text-white text-[10px] font-semibold">${item.quality}</span>
+          </div>
+          <span class="text-[11px]">${item.date}</span>
+        </div>
+      </div>
+    </div>
+  `).join("");
+}
+
 
